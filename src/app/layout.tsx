@@ -13,8 +13,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
-        {children}
+      <body className=" bg-gray-900 text-white">
+        <div className="container mx-auto p-4">
+          {children}
+        </div>
       </body>
     </html>
   );

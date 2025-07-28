@@ -2,25 +2,33 @@
 import axios, { AxiosError } from 'axios';
 import { useState, useCallback } from 'react';
 import Markdown from 'react-markdown';
+import Editor from 'react-simple-code-editor';
+import { highlight, languages } from 'prismjs/components/prism-core';
+import 'prismjs/components/prism-clike';
+import 'prismjs/components/prism-javascript';
+import 'prismjs/themes/prism.css';
 
 interface ReviewResponse {
   aiResponse?: string;
   message?: string;
   error?: string;
+  response?: string;
 }
 
 export default function Home() {
-  const [prompt, setPrompt] = useState('');
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
+  const [code, setCode] = useState(
+    `function add(a, b) {\n  return a + b;\n}`
+  );
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setResponse(''); // Clear previous response when submitting
+    setResponse('');
 
     try {
-      const res = await axios.post<ReviewResponse>('/api/review', { prompt });
+      const res = await axios.post<ReviewResponse>('/api/review', { prompt: code });
 
       if (res.status === 200) {
         setResponse(res.data.response || res.data.message || '✅ Review completed successfully.');
@@ -34,67 +42,77 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [prompt]);
+  }, [code]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-100 flex items-center justify-center p-4">
-      <main className="w-full max-w-2xl bg-white rounded-xl shadow-lg p-8 transform transition-all duration-300 hover:shadow-xl">
-        <h1 className="text-4xl font-extrabold text-gray-800 mb-6 text-center">
-          Code Reviewer AI
-        </h1>
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          <label htmlFor="prompt-input" className="text-lg font-semibold text-gray-700">
-            Enter your code or question for review:
-          </label>
-          <textarea
-            id="prompt-input"
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="e.g., 'Review this JavaScript function: function add(a, b) { return a + b; }'"
-            rows={10}
-            className="w-full p-4 text-base border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 ease-in-out resize-y font-mono"
-            spellCheck="false"
-          />
-          <button
-            type="submit"
-            disabled={loading || !prompt.trim()}
-            className={`
-              w-full py-3 px-6 rounded-lg text-white font-bold text-lg transition-all duration-300 ease-in-out
-              ${loading || !prompt.trim()
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:bg-blue-800'
-              }
-            `}
-          >
-            {loading ? (
-              <span className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Reviewing...
-              </span>
-            ) : (
-              'Get Review'
-            )}
-          </button>
-        </form>
-
-        {response && (
-          <div className="mt-8 p-6 bg-gray-50 border border-gray-200 rounded-lg shadow-md overflow-hidden animate-fade-in">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-              AI Response:
-              {response.startsWith('✅') && <span className="ml-2 text-green-500">🎉</span>}
-              {response.startsWith('⚠️') && <span className="ml-2 text-yellow-500">🚨</span>}
-              {response.startsWith('❌') && <span className="ml-2 text-red-500">🔥</span>}
-            </h2>
-            <div className="prose max-w-none text-gray-700 leading-relaxed break-words whitespace-pre-wrap">
-              <Markdown>{response}</Markdown>
-            </div>
+    <main className='h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white flex items-center justify-center p-6'>
+      <div className='bg-gray-800/50 backdrop-blur-sm rounded-xl shadow-2xl p-8 w-full max-w-6xl flex flex-col md:flex-row gap-8 h-screen'>
+        {/* Code Editor Section */}
+        <div className='flex flex-col w-full md:w-1/2 space-y-6'>
+          <h1 className='text-4xl font-bold text-center bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent'>
+            Code Reviewer AI
+          </h1>
+          <div className='bg-gray-900/80 rounded-lg overflow-scroll shadow-lg border border-gray-700 flex-grow '>
+            <Editor
+              value={code}
+              onValueChange={setCode}
+              highlight={code => highlight(code, languages.js)}
+              padding={20}
+              style={{
+                fontFamily: '"Fira code", "Fira Mono", monospace',
+                fontSize: 15,
+                minHeight: '350px',
+                lineHeight: '1.6',
+                color: '#f8f8f2',
+                backgroundColor: '#1a1b26',
+                overflow: "auto"
+              }}
+              className='resize-none h-full w-full scroll-m-0'
+            />
           </div>
-        )}
-      </main>
-    </div>
+          <button
+            onClick={handleSubmit}
+            className={`w-full py-4 rounded-lg text-lg font-semibold transition-all duration-300
+              ${loading
+                ? 'bg-blue-600/50 cursor-not-allowed'
+                : 'bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 shadow-lg hover:shadow-blue-500/25'}`}
+            disabled={loading}
+          >
+            {loading ? 'Analyzing Code...' : 'Get Review'}
+          </button>
+        </div>
+
+        {/* Review Response Section */}
+        <div className='flex flex-col w-full md:w-1/2 bg-gray-900/80 rounded-lg p-8 shadow-lg border border-gray-700'>
+          <h2 className='text-3xl font-bold mb-6 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent'>
+            Review Response
+          </h2>
+          <div className='flex-grow relative'>
+            {loading && (
+              <div className='absolute inset-0 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm rounded-lg'>
+                <div className='flex flex-col items-center space-y-4'>
+                  <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400'></div>
+                  <p className='text-blue-400 text-lg font-medium'>Analyzing your code...</p>
+                </div>
+              </div>
+            )}
+            {response && (
+              <div className='prose prose-invert prose-lg max-w-none overflow-auto h-220 text-gray-300 p-4 '>
+                <Markdown>{response}</Markdown>
+              </div>
+            )}
+            {!loading && !response && (
+              <div className='flex flex-col items-center justify-center h-full space-y-4 text-center'>
+                <svg className='w-16 h-16 text-gray-600' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                  <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' />
+                </svg>
+                <p className='text-gray-400 text-lg'>Your code review will appear here</p>
+                <p className='text-gray-500 text-sm'>Submit your code to get started</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </main>
   );
 }

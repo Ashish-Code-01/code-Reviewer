@@ -15,8 +15,7 @@ export async function POST(request: Request) {
 
     const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
-        systemInstruction: "You are a code reviewer AI. Provide constructive feedback, identify potential bugs, suggest improvements, and explain best practices. Focus on readability, efficiency, and maintainability.",
-        contents: prompt,
+        contents: `You are a code reviewer AI. Provide feedback on the code quality, suggest improvements, and explain best practices. Focus on readability, efficiency, and maintainability. ${prompt}`,
     });
 
 

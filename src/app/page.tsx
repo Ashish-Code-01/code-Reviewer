@@ -9,10 +9,9 @@ import 'prismjs/components/prism-javascript';
 import 'prismjs/themes/prism.css';
 
 interface ReviewResponse {
-  aiResponse?: string;
+  response?: string;
   message?: string;
   error?: string;
-  response?: string;
 }
 
 export default function Home() {
